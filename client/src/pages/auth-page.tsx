@@ -44,9 +44,8 @@ export default function AuthPage() {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="login">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-1"> {/* Changed to grid-cols-1 */}
                 <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="register">Register</TabsTrigger>
               </TabsList>
 
               <TabsContent value="login">
@@ -80,7 +79,7 @@ export default function AuthPage() {
                     />
                     <Button 
                       type="submit" 
-                      className="w-full mt-6"
+                      className="w-full mt-6 bg-green-600 hover:bg-green-700"
                       disabled={loginMutation.isPending}
                     >
                       Login
@@ -88,46 +87,7 @@ export default function AuthPage() {
                   </form>
                 </Form>
               </TabsContent>
-
-              <TabsContent value="register">
-                <Form {...registerForm}>
-                  <form onSubmit={registerForm.handleSubmit((data) => registerMutation.mutate(data))}>
-                    <FormField
-                      control={registerForm.control}
-                      name="username"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Username</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={registerForm.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem className="mt-4">
-                          <FormLabel>Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <Button 
-                      type="submit" 
-                      className="w-full mt-6"
-                      disabled={registerMutation.isPending}
-                    >
-                      Register
-                    </Button>
-                  </form>
-                </Form>
-              </TabsContent>
+              {/* Removed Register Tab Content */}
             </Tabs>
           </CardContent>
         </Card>
