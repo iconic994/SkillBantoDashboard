@@ -34,6 +34,12 @@ export function Sidebar({ className }: SidebarProps) {
       show: true
     },
     {
+      name: "Pricing",
+      href: "/pricing",
+      icon: "💳",
+      show: true
+    },
+    {
       name: "Admin",
       href: "/admin",
       icon: "⚙️",

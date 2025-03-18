@@ -101,6 +101,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Add these admin routes after the existing admin routes
+  app.get("/api/admin/creator-plans", isAdmin, async (req, res) => {
+    const plans = await storage.getAllCreatorPlans();
+    res.json(plans);
+  });
+
+  app.get("/api/admin/stats", isAdmin, async (req, res) => {
+    const stats = await storage.getAdminStats();
+    res.json(stats);
+  });
+
+  // Pricing routes
+  app.get("/api/pricing/plans", async (_req, res) => {
+    const plans = await storage.getPricingPlans();
+    res.json(plans);
+  });
+
+  app.get("/api/pricing/active-plan", async (req, res) => {
+    if (!req.user) return res.sendStatus(401);
+
+    const plan = await storage.getActivePlan(req.user.id);
+    res.json(plan);
+  });
+
+  app.post("/api/pricing/upgrade", async (req, res) => {
+    if (!req.user) return res.sendStatus(401);
+
+    try {
+      const plan = await storage.upgradePlan(req.user.id, req.body.planId);
+      res.json(plan);
+    } catch (err) {
+      res.status(400).json(err);
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

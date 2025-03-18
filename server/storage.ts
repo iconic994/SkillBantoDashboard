@@ -4,6 +4,22 @@ import createMemoryStore from "memorystore";
 
 const MemoryStore = createMemoryStore(session);
 
+interface Pricing {
+  id: number;
+  plan: string;
+  features: string[];
+  price: number;
+}
+
+interface CreatorPlan {
+  id: number;
+  creatorId: number;
+  planId: number;
+  startDate: Date;
+  endDate: Date | null;
+  active: boolean;
+}
+
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -23,6 +39,11 @@ export interface IStorage {
   getAllCreators(): Promise<User[]>;
   toggleCreatorAccess(id: number): Promise<User>;
 
+  // Pricing methods
+  getPricingPlans(): Promise<Pricing[]>;
+  getActivePlan(creatorId: number): Promise<CreatorPlan | undefined>;
+  upgradePlan(creatorId: number, planId: number): Promise<CreatorPlan>;
+
   sessionStore: session.Store;
 }
 
@@ -30,6 +51,8 @@ export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private students: Map<number, Student>;
   private courses: Map<number, Course>;
+  private pricing: Map<number, Pricing>;
+  private creatorPlans: Map<number, CreatorPlan>;
   private currentId: number;
   sessionStore: session.Store;
 
@@ -37,10 +60,50 @@ export class MemStorage implements IStorage {
     this.users = new Map();
     this.students = new Map();
     this.courses = new Map();
+    this.pricing = new Map();
+    this.creatorPlans = new Map();
     this.currentId = 1;
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000,
     });
+
+    const defaultPlans: Pricing[] = [
+      {
+        id: 1,
+        plan: "basic",
+        features: [
+          "Up to 50 students",
+          "Basic analytics",
+          "Email support"
+        ],
+        price: 29
+      },
+      {
+        id: 2,
+        plan: "pro",
+        features: [
+          "Up to 200 students",
+          "Advanced analytics",
+          "Priority support",
+          "Custom branding"
+        ],
+        price: 79
+      },
+      {
+        id: 3,
+        plan: "enterprise",
+        features: [
+          "Unlimited students",
+          "Enterprise analytics",
+          "24/7 support",
+          "Custom branding",
+          "API access"
+        ],
+        price: 199
+      }
+    ];
+
+    defaultPlans.forEach(plan => this.pricing.set(plan.id, plan));
   }
 
   async getUser(id: number): Promise<User | undefined> {
@@ -124,6 +187,37 @@ export class MemStorage implements IStorage {
     const updated = { ...creator, active: !creator.active };
     this.users.set(id, updated);
     return updated;
+  }
+
+  async getPricingPlans(): Promise<Pricing[]> {
+    return Array.from(this.pricing.values());
+  }
+
+  async getActivePlan(creatorId: number): Promise<CreatorPlan | undefined> {
+    return Array.from(this.creatorPlans.values()).find(
+      plan => plan.creatorId === creatorId && plan.active
+    );
+  }
+
+  async upgradePlan(creatorId: number, planId: number): Promise<CreatorPlan> {
+    const currentPlan = await this.getActivePlan(creatorId);
+    if (currentPlan) {
+      currentPlan.active = false;
+      this.creatorPlans.set(currentPlan.id, currentPlan);
+    }
+
+    const id = this.currentId++;
+    const newPlan: CreatorPlan = {
+      id,
+      creatorId,
+      planId,
+      startDate: new Date(),
+      endDate: null,
+      active: true
+    };
+
+    this.creatorPlans.set(id, newPlan);
+    return newPlan;
   }
 }
 

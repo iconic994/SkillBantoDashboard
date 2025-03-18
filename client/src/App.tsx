@@ -11,6 +11,7 @@ import Courses from "./pages/courses";
 import Admin from "./pages/admin";
 import { ProtectedRoute } from "./lib/protected-route";
 import { Sidebar } from "./components/layout/sidebar";
+import PricingPage from "./pages/pricing";
 
 function Router() {
   return (
@@ -21,6 +22,7 @@ function Router() {
           <ProtectedRoute path="/" component={Dashboard} />
           <ProtectedRoute path="/students" component={Students} />
           <ProtectedRoute path="/courses" component={Courses} />
+          <ProtectedRoute path="/pricing" component={PricingPage} />
           <ProtectedRoute path="/admin" component={Admin} />
           <Route path="/auth" component={AuthPage} />
           <Route component={NotFound} />
