@@ -20,6 +20,24 @@ interface CreatorPlan {
   active: boolean;
 }
 
+interface Notification {
+  title: string;
+  message: string;
+  timestamp: Date;
+}
+
+interface AdminStats {
+  creatorGrowth: number;
+  notifications: Notification[];
+  creatorStats: {
+    [key: number]: {
+      totalStudents: number;
+      revenue: number;
+      lastActive: string;
+    };
+  };
+}
+
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -38,6 +56,8 @@ export interface IStorage {
   // Admin methods
   getAllCreators(): Promise<User[]>;
   toggleCreatorAccess(id: number): Promise<User>;
+  getAllCreatorPlans(): Promise<CreatorPlan[]>;
+  getAdminStats(): Promise<AdminStats>;
 
   // Pricing methods
   getPricingPlans(): Promise<Pricing[]>;
@@ -218,6 +238,52 @@ export class MemStorage implements IStorage {
 
     this.creatorPlans.set(id, newPlan);
     return newPlan;
+  }
+
+  async getAllCreatorPlans(): Promise<CreatorPlan[]> {
+    return Array.from(this.creatorPlans.values());
+  }
+
+  async getAdminStats(): Promise<AdminStats> {
+    const creators = await this.getAllCreators();
+    const lastMonthCreators = creators.filter(
+      c => c.id < this.currentId - 5 // Simple simulation of growth
+    ).length;
+    const currentCreators = creators.length;
+    const growth = lastMonthCreators ? ((currentCreators - lastMonthCreators) / lastMonthCreators) * 100 : 0;
+
+    const creatorStats: AdminStats['creatorStats'] = {};
+    for (const creator of creators) {
+      const students = await this.getStudentsByCreator(creator.id);
+      const plan = await this.getActivePlan(creator.id);
+      const planDetails = plan ? this.pricing.get(plan.planId) : null;
+
+      creatorStats[creator.id] = {
+        totalStudents: students.length,
+        revenue: planDetails ? planDetails.price : 0,
+        lastActive: new Date().toLocaleDateString(), // In a real app, track actual last active time
+      };
+    }
+
+    // Sample notifications
+    const notifications: Notification[] = [
+      {
+        title: "New Creator Signup",
+        message: "A new creator has joined the platform",
+        timestamp: new Date(),
+      },
+      {
+        title: "Subscription Alert",
+        message: "2 creator subscriptions are due for renewal",
+        timestamp: new Date(),
+      },
+    ];
+
+    return {
+      creatorGrowth: growth,
+      notifications,
+      creatorStats,
+    };
   }
 }
 

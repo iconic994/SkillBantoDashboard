@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { User, CreatorPlan, InsertUser } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Loader2, UserPlus } from "lucide-react";
+import { Loader2, UserPlus, Bell, AlertCircle } from "lucide-react";
 import { Redirect } from "wouter";
 import {
   Dialog,
@@ -35,6 +35,7 @@ import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertUserSchema } from "@shared/schema";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function Admin() {
   const { toast } = useToast();
@@ -52,6 +53,10 @@ export default function Admin() {
 
   const { data: creatorPlans } = useQuery<CreatorPlan[]>({
     queryKey: ["/api/admin/creator-plans"],
+  });
+
+  const { data: stats } = useQuery({
+    queryKey: ["/api/admin/stats"],
   });
 
   const form = useForm<InsertUser>({
@@ -107,6 +112,13 @@ export default function Admin() {
     );
   }
 
+  // Transform data for charts
+  const chartData = [
+    { name: 'Total Creators', value: creators?.length || 0 },
+    { name: 'Active Creators', value: creators?.filter(c => c.active).length || 0 },
+    { name: 'Paid Plans', value: creatorPlans?.filter(p => p.active).length || 0 },
+  ];
+
   return (
     <div className="p-8">
       <div className="mb-8">
@@ -123,6 +135,9 @@ export default function Admin() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-800">{creators?.length || 0}</div>
+            {stats?.creatorGrowth > 0 && (
+              <p className="text-sm text-green-600">+{stats.creatorGrowth}% from last month</p>
+            )}
           </CardContent>
         </Card>
         <Card className="border-green-100">
@@ -133,6 +148,9 @@ export default function Admin() {
             <div className="text-2xl font-bold text-green-800">
               {creators?.filter(c => c.active).length || 0}
             </div>
+            <p className="text-sm text-muted-foreground">
+              {((creators?.filter(c => c.active).length || 0) / (creators?.length || 1) * 100).toFixed(1)}% active rate
+            </p>
           </CardContent>
         </Card>
         <Card className="border-green-100">
@@ -143,9 +161,57 @@ export default function Admin() {
             <div className="text-2xl font-bold text-green-800">
               {creatorPlans?.filter(p => p.active).length || 0}
             </div>
+            <p className="text-sm text-muted-foreground">
+              {((creatorPlans?.filter(p => p.active).length || 0) / (creators?.length || 1) * 100).toFixed(1)}% conversion rate
+            </p>
           </CardContent>
         </Card>
       </div>
+
+      {/* Analytics Chart */}
+      <Card className="border-green-100 mb-8">
+        <CardHeader>
+          <CardTitle className="text-green-700">Platform Analytics</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="value" fill="#059669" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Notifications */}
+      {stats?.notifications?.length > 0 && (
+        <Card className="border-green-100 mb-8">
+          <CardHeader>
+            <CardTitle className="text-green-700 flex items-center gap-2">
+              <Bell className="h-5 w-5" />
+              System Notifications
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {stats.notifications.map((notification, i) => (
+                <div key={i} className="flex items-start gap-3 p-3 bg-green-50 rounded-lg">
+                  <AlertCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-green-800">{notification.title}</p>
+                    <p className="text-sm text-green-600">{notification.message}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="border-green-100">
         <CardHeader>
@@ -218,7 +284,10 @@ export default function Admin() {
                 <TableHead>Role</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Plan</TableHead>
-                <TableHead>Dashboard URL</TableHead>
+                <TableHead>Students</TableHead>
+                <TableHead>Revenue</TableHead>
+                <TableHead>Last Active</TableHead>
+                <TableHead>Dashboard</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -227,6 +296,7 @@ export default function Admin() {
                 const plan = creatorPlans?.find(
                   p => p.creatorId === creator.id && p.active
                 );
+                const creatorStats = stats?.creatorStats?.[creator.id];
 
                 return (
                   <TableRow key={creator.id}>
@@ -250,6 +320,9 @@ export default function Admin() {
                         "No Plan"
                       )}
                     </TableCell>
+                    <TableCell>{creatorStats?.totalStudents || 0}</TableCell>
+                    <TableCell>${creatorStats?.revenue || 0}</TableCell>
+                    <TableCell>{creatorStats?.lastActive || 'Never'}</TableCell>
                     <TableCell>
                       <Button
                         variant="link"
