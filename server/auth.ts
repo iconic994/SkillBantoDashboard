@@ -35,7 +35,7 @@ export function setupAuth(app: Express) {
     saveUninitialized: false,
     store: storage.sessionStore,
     cookie: {
-      secure: false, // Set to true in production with HTTPS
+      secure: false,
       maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
   };
@@ -53,6 +53,8 @@ export function setupAuth(app: Express) {
           return done(null, false, { message: "Incorrect username." });
         }
 
+        console.log("Login attempt:", { username, role: user.role }); // Debug log
+
         const isValid = await comparePasswords(password, user.password);
         if (!isValid) {
           return done(null, false, { message: "Incorrect password." });
@@ -60,6 +62,7 @@ export function setupAuth(app: Express) {
 
         return done(null, user);
       } catch (err) {
+        console.error("Login error:", err); // Debug log
         return done(err);
       }
     }),
@@ -91,6 +94,7 @@ export function setupAuth(app: Express) {
           password: await hashPassword("admin123"),
           role: "admin",
         });
+        console.log("Admin created:", admin); // Debug log
         res.json({ message: "Admin user created", admin });
       } else {
         res.json({ message: "Admin user already exists" });
@@ -122,13 +126,19 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", (req, res, next) => {
+    console.log("Login request:", req.body); // Debug log
     passport.authenticate("local", (err, user, info) => {
-      if (err) return next(err);
+      if (err) {
+        console.error("Auth error:", err); // Debug log
+        return next(err);
+      }
       if (!user) {
+        console.log("Auth failed:", info); // Debug log
         return res.status(401).json({ message: info.message || "Authentication failed" });
       }
       req.login(user, (err) => {
         if (err) return next(err);
+        console.log("Login successful:", user); // Debug log
         res.json(user);
       });
     })(req, res, next);

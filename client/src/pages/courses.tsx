@@ -183,16 +183,22 @@ export default function Courses() {
                         View Course Content
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-4xl">
+                    <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>{course.name} - Course Content</DialogTitle>
+                        <DialogTitle>{course.name}</DialogTitle>
                       </DialogHeader>
-                      <div className="mt-4">
-                        <iframe
-                          src={course.driveLink}
-                          className="w-full h-[600px] rounded-lg border"
-                          title={`${course.name} content`}
-                        />
+                      <div className="mt-4 space-y-4">
+                        <div>
+                          <h4 className="text-sm font-semibold">Course Link:</h4>
+                          <a 
+                            href={course.driveLink} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-green-600 hover:text-green-700 break-all"
+                          >
+                            {course.driveLink}
+                          </a>
+                        </div>
                       </div>
                     </DialogContent>
                   </Dialog>
