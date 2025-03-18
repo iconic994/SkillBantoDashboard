@@ -87,6 +87,16 @@ export class MemStorage implements IStorage {
       checkPeriod: 86400000,
     });
 
+    // Create default admin user with fixed password
+    this.createUser({
+      username: "admin",
+      password: "admin123", // This will be hashed by createUser
+      role: "admin",
+    }).then(admin => {
+      console.log("Default admin user created:", admin);
+    });
+
+    // Add default pricing plans
     const defaultPlans: Pricing[] = [
       {
         id: 1,
@@ -127,24 +137,30 @@ export class MemStorage implements IStorage {
   }
 
   async getUser(id: number): Promise<User | undefined> {
+    console.log("Getting user by id:", id);
+    console.log("Available users:", Array.from(this.users.entries()));
     return this.users.get(id);
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
+    console.log("Getting user by username:", username);
+    console.log("Available users:", Array.from(this.users.entries()));
     return Array.from(this.users.values()).find(
-      (user) => user.username === username,
+      (user) => user.username === username
     );
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentId++;
-    const user: User = { 
-      ...insertUser, 
+    const user: User = {
+      ...insertUser,
       id,
       active: true,
       role: insertUser.role || "creator"
     };
+    console.log("Creating user:", user);
     this.users.set(id, user);
+    console.log("Updated users:", Array.from(this.users.entries()));
     return user;
   }
 

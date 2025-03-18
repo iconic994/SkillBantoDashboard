@@ -22,10 +22,15 @@ async function hashPassword(password: string) {
 }
 
 async function comparePasswords(supplied: string, stored: string) {
-  const [hashed, salt] = stored.split(".");
-  const hashedBuf = Buffer.from(hashed, "hex");
-  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-  return timingSafeEqual(hashedBuf, suppliedBuf);
+  try {
+    const [hashed, salt] = stored.split(".");
+    const hashedBuf = Buffer.from(hashed, "hex");
+    const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+    return timingSafeEqual(hashedBuf, suppliedBuf);
+  } catch (err) {
+    console.error("Error comparing passwords:", err);
+    return false;
+  }
 }
 
 export function setupAuth(app: Express) {
@@ -48,38 +53,48 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
+        console.log("Attempting login for username:", username);
         const user = await storage.getUserByUsername(username);
+
         if (!user) {
+          console.log("User not found:", username);
           return done(null, false, { message: "Incorrect username." });
         }
 
-        console.log("Login attempt:", { username, role: user.role }); // Debug log
+        console.log("Found user:", { username: user.username, role: user.role });
 
         const isValid = await comparePasswords(password, user.password);
+        console.log("Password validation:", { isValid });
+
         if (!isValid) {
           return done(null, false, { message: "Incorrect password." });
         }
 
         return done(null, user);
       } catch (err) {
-        console.error("Login error:", err); // Debug log
+        console.error("Login error:", err);
         return done(err);
       }
     }),
   );
 
   passport.serializeUser((user, done) => {
+    console.log("Serializing user:", user.id);
     done(null, user.id);
   });
 
   passport.deserializeUser(async (id: number, done) => {
     try {
+      console.log("Deserializing user:", id);
       const user = await storage.getUser(id);
       if (!user) {
+        console.log("User not found during deserialization:", id);
         return done(null, false);
       }
+      console.log("Deserialized user:", user.username);
       done(null, user);
     } catch (err) {
+      console.error("Deserialization error:", err);
       done(err);
     }
   });
@@ -89,17 +104,23 @@ export function setupAuth(app: Express) {
     try {
       const adminExists = await storage.getUserByUsername("admin");
       if (!adminExists) {
+        const hashedPassword = await hashPassword("admin123");
+        console.log("Creating admin with hashed password:", hashedPassword);
+
         const admin = await storage.createUser({
           username: "admin",
-          password: await hashPassword("admin123"),
+          password: hashedPassword,
           role: "admin",
         });
-        console.log("Admin created:", admin); // Debug log
+
+        console.log("Admin created successfully:", admin);
         res.json({ message: "Admin user created", admin });
       } else {
+        console.log("Admin already exists:", adminExists);
         res.json({ message: "Admin user already exists" });
       }
     } catch (err) {
+      console.error("Error creating admin:", err);
       res.status(500).json(err);
     }
   });
@@ -126,19 +147,19 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", (req, res, next) => {
-    console.log("Login request:", req.body); // Debug log
+    console.log("Login request:", req.body);
     passport.authenticate("local", (err, user, info) => {
       if (err) {
-        console.error("Auth error:", err); // Debug log
+        console.error("Auth error:", err);
         return next(err);
       }
       if (!user) {
-        console.log("Auth failed:", info); // Debug log
+        console.log("Auth failed:", info);
         return res.status(401).json({ message: info.message || "Authentication failed" });
       }
       req.login(user, (err) => {
         if (err) return next(err);
-        console.log("Login successful:", user); // Debug log
+        console.log("Login successful:", user);
         res.json(user);
       });
     })(req, res, next);
