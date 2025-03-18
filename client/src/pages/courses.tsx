@@ -29,7 +29,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { insertCourseSchema, Course } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Loader2, PlusCircle, BookOpen, Trash2, Link as LinkIcon } from "lucide-react";
+import { Loader2, PlusCircle, BookOpen, Trash2, LinkIcon } from "lucide-react";
 
 export default function Courses() {
   const { toast } = useToast();
@@ -177,14 +177,25 @@ export default function Courses() {
               <CardDescription>
                 <div className="flex items-center gap-2 text-green-600">
                   <LinkIcon className="h-4 w-4" />
-                  <a
-                    href={course.driveLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:underline"
-                  >
-                    View Course Content
-                  </a>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="link" className="text-green-600 p-0 hover:text-green-700">
+                        View Course Content
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl">
+                      <DialogHeader>
+                        <DialogTitle>{course.name} - Course Content</DialogTitle>
+                      </DialogHeader>
+                      <div className="mt-4">
+                        <iframe
+                          src={course.driveLink}
+                          className="w-full h-[600px] rounded-lg border"
+                          title={`${course.name} content`}
+                        />
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </CardDescription>
             </CardHeader>

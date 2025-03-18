@@ -58,10 +58,6 @@ export function setupAuth(app: Express) {
           return done(null, false, { message: "Incorrect password." });
         }
 
-        if (!user.active) {
-          return done(null, false, { message: "Account is inactive." });
-        }
-
         return done(null, user);
       } catch (err) {
         return done(err);

@@ -107,8 +107,8 @@ export default function Students() {
     const matchesSearch =
       student.name.toLowerCase().includes(search.toLowerCase()) ||
       student.email.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = !statusFilter || student.status === statusFilter;
-    const matchesCourse = !courseFilter || student.courseId === courseFilter;
+    const matchesStatus = statusFilter === 'all' || !statusFilter || student.status === statusFilter;
+    const matchesCourse = !courseFilter || courseFilter === 0 || student.courseId === courseFilter;
     return matchesSearch && matchesStatus && matchesCourse;
   });
 
@@ -245,7 +245,7 @@ export default function Students() {
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Statuses</SelectItem>
+            <SelectItem value="all">All Statuses</SelectItem>
             <SelectItem value="pending">Pending</SelectItem>
             <SelectItem value="active">Active</SelectItem>
             <SelectItem value="cancelled">Cancelled</SelectItem>
@@ -256,7 +256,7 @@ export default function Students() {
             <SelectValue placeholder="Filter by course" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Courses</SelectItem>
+            <SelectItem value="0">All Courses</SelectItem>
             {courses?.map((course) => (
               <SelectItem key={course.id} value={course.id.toString()}>
                 {course.name}
