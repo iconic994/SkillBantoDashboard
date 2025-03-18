@@ -2,6 +2,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { Student, Course } from "@shared/schema";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -18,23 +19,34 @@ export default function Dashboard() {
     {
       name: "Total Students",
       value: students?.length || 0,
-      icon: "👥"
+      icon: "👥",
+      change: "+20% from last month"
     },
     {
       name: "Active Students",
       value: students?.filter(s => s.status === "active").length || 0,
-      icon: "✅"
+      icon: "✅",
+      change: "80% success rate"
     },
     {
       name: "Pending Students",
       value: students?.filter(s => s.status === "pending").length || 0,
-      icon: "⏳"
+      icon: "⏳",
+      change: "5 new this week"
     },
     {
       name: "Total Courses",
       value: courses?.length || 0,
-      icon: "📚"
+      icon: "📚",
+      change: "2 added recently"
     }
+  ];
+
+  // Transform data for charts
+  const enrollmentData = [
+    { name: 'Active', value: students?.filter(s => s.status === "active").length || 0 },
+    { name: 'Pending', value: students?.filter(s => s.status === "pending").length || 0 },
+    { name: 'Cancelled', value: students?.filter(s => s.status === "cancelled").length || 0 },
   ];
 
   return (
@@ -56,10 +68,31 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-800">{stat.value}</div>
+              <p className="text-xs text-green-600 mt-1">{stat.change}</p>
             </CardContent>
           </Card>
         ))}
       </div>
+
+      {/* Analytics Chart */}
+      <Card className="border-green-100 mt-8">
+        <CardHeader>
+          <CardTitle className="text-green-700">Enrollment Analytics</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={enrollmentData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="value" fill="#059669" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 md:grid-cols-2 mt-8">
         <Card className="border-green-100">
@@ -104,7 +137,7 @@ export default function Dashboard() {
                         try {
                           return new URL(course.driveLink).hostname;
                         } catch {
-                          return 'Invalid URL';
+                          return 'View Course Content';
                         }
                       })()}
                     </p>

@@ -68,6 +68,25 @@ export function setupAuth(app: Express) {
     }
   });
 
+  // Create an initial admin user if none exists
+  app.get("/api/init-admin", async (req, res) => {
+    try {
+      const adminExists = await storage.getUserByUsername("admin");
+      if (!adminExists) {
+        const admin = await storage.createUser({
+          username: "admin",
+          password: await hashPassword("admin123"),
+          role: "admin",
+        });
+        res.json({ message: "Admin user created", admin });
+      } else {
+        res.json({ message: "Admin user already exists" });
+      }
+    } catch (err) {
+      res.status(500).json(err);
+    }
+  });
+
   app.post("/api/register", async (req, res, next) => {
     try {
       const existingUser = await storage.getUserByUsername(req.body.username);
