@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -10,15 +11,35 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { User, CreatorPlan } from "@shared/schema";
+import { User, CreatorPlan, InsertUser } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Loader2, UserPlus } from "lucide-react";
 import { Redirect } from "wouter";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { insertUserSchema } from "@shared/schema";
 
 export default function Admin() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const [isOpen, setIsOpen] = useState(false);
 
   // Redirect if not admin
   if (user?.role !== "admin") {
@@ -31,6 +52,33 @@ export default function Admin() {
 
   const { data: creatorPlans } = useQuery<CreatorPlan[]>({
     queryKey: ["/api/admin/creator-plans"],
+  });
+
+  const form = useForm<InsertUser>({
+    resolver: zodResolver(insertUserSchema),
+    defaultValues: {
+      role: "creator",
+    },
+  });
+
+  const createCreatorMutation = useMutation({
+    mutationFn: async (data: InsertUser) => {
+      const res = await apiRequest("POST", "/api/register", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/creators"] });
+      toast({ title: "Creator account created successfully" });
+      setIsOpen(false);
+      form.reset();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to create creator account",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   const toggleAccessMutation = useMutation({
@@ -54,7 +102,7 @@ export default function Admin() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-border" />
+        <Loader2 className="h-8 w-8 animate-spin text-green-600" />
       </div>
     );
   }
@@ -62,51 +110,104 @@ export default function Admin() {
   return (
     <div className="p-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+        <h1 className="text-3xl font-bold text-green-700">Admin Dashboard</h1>
         <p className="text-muted-foreground mt-2">
-          Manage creator accounts and monitor platform usage
+          Create and manage creator dashboards
         </p>
       </div>
 
       <div className="grid gap-4 mb-8 md:grid-cols-3">
-        <Card>
+        <Card className="border-green-100">
           <CardHeader>
-            <CardTitle>Total Creators</CardTitle>
+            <CardTitle className="text-green-700">Total Creators</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{creators?.length || 0}</div>
+            <div className="text-2xl font-bold text-green-800">{creators?.length || 0}</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-green-100">
           <CardHeader>
-            <CardTitle>Active Creators</CardTitle>
+            <CardTitle className="text-green-700">Active Creators</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold text-green-800">
               {creators?.filter(c => c.active).length || 0}
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-green-100">
           <CardHeader>
-            <CardTitle>Paid Plans</CardTitle>
+            <CardTitle className="text-green-700">Paid Plans</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold text-green-800">
               {creatorPlans?.filter(p => p.active).length || 0}
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <Card>
+      <Card className="border-green-100">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Creator Accounts</CardTitle>
-            <Button>
-              <UserPlus className="h-4 w-4 mr-2" />
-              Add Creator
-            </Button>
+            <CardTitle className="text-green-700">Creator Accounts</CardTitle>
+            <Dialog open={isOpen} onOpenChange={setIsOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-green-600 hover:bg-green-700">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Create New Dashboard
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create New Dashboard</DialogTitle>
+                </DialogHeader>
+                <Form {...form}>
+                  <form
+                    onSubmit={form.handleSubmit((data) => createCreatorMutation.mutate(data))}
+                    className="space-y-4"
+                  >
+                    <FormField
+                      control={form.control}
+                      name="username"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Username</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password</FormLabel>
+                          <FormControl>
+                            <Input type="password" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button
+                      type="submit"
+                      className="w-full bg-green-600 hover:bg-green-700"
+                      disabled={createCreatorMutation.isPending}
+                    >
+                      {createCreatorMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        "Create Dashboard"
+                      )}
+                    </Button>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
           </div>
         </CardHeader>
         <CardContent>
@@ -117,6 +218,7 @@ export default function Admin() {
                 <TableHead>Role</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Plan</TableHead>
+                <TableHead>Dashboard URL</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -150,10 +252,23 @@ export default function Admin() {
                     </TableCell>
                     <TableCell>
                       <Button
+                        variant="link"
+                        className="text-green-600 hover:text-green-700"
+                        onClick={() => {
+                          navigator.clipboard.writeText(`${window.location.origin}/auth`);
+                          toast({ title: "Login URL copied to clipboard" });
+                        }}
+                      >
+                        Copy Login URL
+                      </Button>
+                    </TableCell>
+                    <TableCell>
+                      <Button
                         variant="outline"
                         size="sm"
                         onClick={() => toggleAccessMutation.mutate(creator.id)}
                         disabled={toggleAccessMutation.isPending}
+                        className="border-green-200 hover:bg-green-50"
                       >
                         {creator.active ? "Restrict Access" : "Grant Access"}
                       </Button>

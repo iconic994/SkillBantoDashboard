@@ -40,31 +40,31 @@ export default function Dashboard() {
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold">Welcome back, {user?.username}!</h1>
+        <h1 className="text-3xl font-bold text-green-700">Welcome back, {user?.username}!</h1>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
-          <Card key={stat.name}>
+          <Card key={stat.name} className="border-green-100 hover:border-green-200 transition-colors">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+              <CardTitle className="text-sm font-medium text-green-700">
                 {stat.name}
               </CardTitle>
-              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+              <div className="h-8 w-8 rounded-full bg-green-50 flex items-center justify-center">
                 {stat.icon}
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
+              <div className="text-2xl font-bold text-green-800">{stat.value}</div>
             </CardContent>
           </Card>
         ))}
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 mt-8">
-        <Card>
+        <Card className="border-green-100">
           <CardHeader>
-            <CardTitle>Recent Students</CardTitle>
+            <CardTitle className="text-green-700">Recent Students</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-8">
@@ -89,9 +89,9 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-green-100">
           <CardHeader>
-            <CardTitle>Recent Courses</CardTitle>
+            <CardTitle className="text-green-700">Recent Courses</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-8">
@@ -100,7 +100,13 @@ export default function Dashboard() {
                   <div className="ml-4 space-y-1">
                     <p className="text-sm font-medium leading-none">{course.name}</p>
                     <p className="text-sm text-muted-foreground">
-                      {new URL(course.driveLink).hostname}
+                      {(() => {
+                        try {
+                          return new URL(course.driveLink).hostname;
+                        } catch {
+                          return 'Invalid URL';
+                        }
+                      })()}
                     </p>
                   </div>
                 </div>
