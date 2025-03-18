@@ -29,7 +29,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { insertCourseSchema, Course } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Loader2, Trash2 } from "lucide-react";
+import { Loader2, PlusCircle, BookOpen, Trash2, Link as LinkIcon } from "lucide-react";
 
 export default function Courses() {
   const { toast } = useToast();
@@ -51,6 +51,7 @@ export default function Courses() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/courses"] });
       toast({ title: "Course created successfully" });
+      form.reset();
     },
     onError: (error: Error) => {
       toast({
@@ -81,7 +82,7 @@ export default function Courses() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-border" />
+        <Loader2 className="h-8 w-8 animate-spin text-green-600" />
       </div>
     );
   }
@@ -89,10 +90,18 @@ export default function Courses() {
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold">Courses</h1>
+        <div>
+          <h1 className="text-3xl font-bold text-green-700">Course Management</h1>
+          <p className="text-muted-foreground mt-2">
+            Create and manage your course content
+          </p>
+        </div>
         <Dialog>
           <DialogTrigger asChild>
-            <Button>Add New Course</Button>
+            <Button className="bg-green-600 hover:bg-green-700">
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Add New Course
+            </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
@@ -121,9 +130,9 @@ export default function Courses() {
                   name="driveLink"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Google Drive Link</FormLabel>
+                      <FormLabel>Course Content Link</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input {...field} placeholder="Google Drive or similar content link" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -131,7 +140,7 @@ export default function Courses() {
                 />
                 <Button
                   type="submit"
-                  className="w-full"
+                  className="w-full bg-green-600 hover:bg-green-700"
                   disabled={createMutation.isPending}
                 >
                   {createMutation.isPending ? (
@@ -148,34 +157,42 @@ export default function Courses() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {courses?.map((course) => (
-          <Card key={course.id}>
+          <Card key={course.id} className="border-green-100 hover:border-green-200 transition-colors">
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
-                <span>{course.name}</span>
+                <div className="flex items-center gap-2">
+                  <BookOpen className="h-5 w-5 text-green-600" />
+                  <span>{course.name}</span>
+                </div>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => deleteMutation.mutate(course.id)}
                   disabled={deleteMutation.isPending}
+                  className="text-red-500 hover:text-red-700 hover:bg-red-50"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </CardTitle>
               <CardDescription>
-                <a
-                  href={course.driveLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-500 hover:underline"
-                >
-                  View Course Content
-                </a>
+                <div className="flex items-center gap-2 text-green-600">
+                  <LinkIcon className="h-4 w-4" />
+                  <a
+                    href={course.driveLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:underline"
+                  >
+                    View Course Content
+                  </a>
+                </div>
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Course ID: {course.id}
-              </p>
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <span>Course ID: {course.id}</span>
+                <span className="text-green-600">Active</span>
+              </div>
             </CardContent>
           </Card>
         ))}
